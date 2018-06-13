@@ -30,6 +30,7 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.XmlRes;
 import android.util.Log;
 
 import com.urbanairship.AirshipConfigOptions;
@@ -198,13 +199,20 @@ public class CordovaAutopilot extends Autopilot {
 
         airship.getPushManager().setNotificationFactory(factory);
 
-
         UAirship.shared().getInbox().addListener(new RichPushInbox.Listener() {
             @Override
             public void onInboxUpdated() {
                 UAirshipPluginManager.shared().inboxUpdated();
             }
         });
+
+        String packageName = UAirship.shared().getPackageName();
+        @XmlRes int resId = context.getResources().getIdentifier("ua_custom_notification_buttons", "xml", packageName);
+
+        if (resId != 0) {
+            Logger.debug("Loading custom notification button groups");
+            airship.getPushManager().addNotificationActionButtonGroups(context, resId);
+        }
     }
 
     /**
