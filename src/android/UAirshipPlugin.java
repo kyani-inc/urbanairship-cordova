@@ -72,6 +72,7 @@ public class UAirshipPlugin extends CordovaPlugin {
             "isAppNotificationsEnabled", "dismissMessageCenter", "dismissInboxMessage", "dismissOverlayInboxMessage", "setAutoLaunchDefaultMessageCenter",
             "setTitle");
 
+    private String title;
 
     /*
      * These actions are available even if airship is not ready.
