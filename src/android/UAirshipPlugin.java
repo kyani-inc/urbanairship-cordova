@@ -951,21 +951,22 @@ public class UAirshipPlugin extends CordovaPlugin {
         String messageId = data.optString(0);
 
         Logger.debug("Displaying Message Center");
+        Intent intent;
         if (!UAStringUtil.isEmpty(messageId)) {
-            Intent intent = new Intent(cordova.getActivity(), CustomMessageCenterActivity.class)
+            intent = new Intent(cordova.getActivity(), CustomMessageCenterActivity.class)
                     .setAction(RichPushInbox.VIEW_MESSAGE_INTENT_ACTION)
                     .setPackage(cordova.getActivity().getPackageName())
                     .setData(Uri.fromParts(RichPushInbox.MESSAGE_DATA_SCHEME, messageId, null))
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-            cordova.getActivity().startActivity(intent);
         } else {
-            Intent intent = new Intent(cordova.getActivity(), CustomMessageCenterActivity.class)
+            intent = new Intent(cordova.getActivity(), CustomMessageCenterActivity.class)
                     .setPackage(cordova.getActivity().getPackageName())
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-            cordova.getActivity().startActivity(intent);
         }
+        if(this.title != null && !this.title.isEmpty()){
+            intent.putExtra("TITLE", this.title);
+        }
+        cordova.getActivity().startActivity(intent);
         callbackContext.success();
     }
 
