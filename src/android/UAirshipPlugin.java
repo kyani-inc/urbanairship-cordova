@@ -69,8 +69,10 @@ public class UAirshipPlugin extends CordovaPlugin {
             "setQuietTimeEnabled", "setQuietTime", "recordCurrentLocation", "clearNotifications", "setAnalyticsEnabled", "isAnalyticsEnabled",
             "setNamedUser", "getNamedUser", "runAction", "editNamedUserTagGroups", "editChannelTagGroups", "displayMessageCenter", "markInboxMessageRead",
             "deleteInboxMessage", "getInboxMessages", "displayInboxMessage", "overlayInboxMessage", "refreshInbox", "getDeepLink", "setAssociatedIdentifier",
-            "isAppNotificationsEnabled", "dismissMessageCenter", "dismissInboxMessage", "dismissOverlayInboxMessage", "setAutoLaunchDefaultMessageCenter");
+            "isAppNotificationsEnabled", "dismissMessageCenter", "dismissInboxMessage", "dismissOverlayInboxMessage", "setAutoLaunchDefaultMessageCenter",
+            "setTitle");
 
+    private String title;
 
     /*
      * These actions are available even if airship is not ready.
@@ -964,6 +966,19 @@ public class UAirshipPlugin extends CordovaPlugin {
 
             cordova.getActivity().startActivity(intent);
         }
+        callbackContext.success();
+    }
+
+    /**
+     * Sets the title for message center activity
+     *
+     * @param data The call data. The title is expected to be the first entry.
+     * @param callbackContext The callback context.
+     * @throws JSONException
+     */
+    void setTitle(JSONArray data, CallbackContext callbackContext) throws JSONException {
+        this.title = data.optString(0);
+        Logger.debug("setTitle: " + this.title);
         callbackContext.success();
     }
 
