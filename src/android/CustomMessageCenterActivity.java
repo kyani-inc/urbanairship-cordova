@@ -20,6 +20,7 @@ public class CustomMessageCenterActivity extends MessageCenterActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        String title;
 
         if (getIntent() != null && "CLOSE".equals(getIntent().getAction())) {
             finish();
