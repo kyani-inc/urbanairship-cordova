@@ -615,6 +615,19 @@ module.exports = {
   },
 
   /**
+   * Sets the title for message center activity
+   *
+   * @param {string} title The title for message center activity.
+   * @param {function} [success] Success callback.
+   * @param {function(message)} [failure] Failure callback.
+   * @param {string} failure.message The error message.
+   */
+  setTitle: function(title, success, failure) {
+    argscheck.checkArgs('sFF', 'UAirship.setTitle', arguments)
+    callNative(success, failure, "setTitle", [title])
+  },
+
+  /**
    * Dismiss the message center.
    *
    * @param {function} [success] Success callback.
