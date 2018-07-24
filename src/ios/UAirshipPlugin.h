@@ -320,6 +320,13 @@
 - (void)displayMessageCenter:(CDVInvokedUrlCommand *)command;
 
 /**
+ * Sets the title for message center.
+ *
+ * @param command The cordova command.
+ */
+- (void)setTitle:(CDVInvokedUrlCommand *)command;
+
+/**
  * Dismiss the message center.
  *
  * @param command The cordova command.

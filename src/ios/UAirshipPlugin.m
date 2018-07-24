@@ -592,11 +592,8 @@ typedef void (^UACordovaExecutionBlock)(NSArray *args, UACordovaCompletionHandle
     }];
 }
 
-- (void)dismissMessageCenter:(CDVInvokedUrlCommand *)command {
-    [self performCallbackWithCommand:command withBlock:^(NSArray *args, UACordovaCompletionHandler completionHandler) {
-        [[UAirship messageCenter] dismiss];
-        completionHandler(CDVCommandStatus_OK, nil);
-    }];
+- (void)setTitle:(CDVInvokedUrlCommand *)command {
+
 }
 
 - (void)getInboxMessages:(CDVInvokedUrlCommand *)command {
