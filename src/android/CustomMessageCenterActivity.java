@@ -72,7 +72,7 @@ public class CustomMessageCenterActivity extends MessageCenterActivity {
 
                 LinearLayout.LayoutParams imgLayoutParams = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
                 ImageView img = new ImageView(getApplicationContext());
-                imgLayoutParams.gravity= Gravity.LEFT | Gravity.CENTER_VERTICAL;
+                imgLayoutParams.gravity= Gravity.LEFT | Gravity.BOTTOM;
                 img.setLayoutParams(imgLayoutParams);
                 img.setImageDrawable(changeBackArrowColor(getApplicationContext(), 243));
                 img.setOnClickListener(clickListener);
