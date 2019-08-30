@@ -1,4 +1,4 @@
-/* Copyright 2018 Urban Airship and Contributors */
+/* Copyright Urban Airship and Contributors */
 
 var cardova = require("cordova"),
     exec = require("cordova/exec"),
@@ -120,7 +120,7 @@ module.exports = {
   /**
    * Event fired when a new deep link is received.
    *
-   * @event UrbanAirship#deep_link
+   * @event deep_link
    * @type {object}
    * @param {string} [deepLink] The deep link.
    */
@@ -128,7 +128,7 @@ module.exports = {
   /**
    * Event fired when a channel registration occurs.
    *
-   * @event UrbanAirship#registration
+   * @event registration
    * @type {object}
    * @param {string} [channelID] The channel ID.
    * @param {string} [registrationToken] The deviceToken on iOS, and the FCM/ADM token on Android.
@@ -138,44 +138,58 @@ module.exports = {
   /**
    * Event fired when the inbox is updated.
    *
-   * @event UrbanAirship#inbox_updated
+   * @event inbox_updated
+   */
+
+  /**
+   * Event fired when the inbox needs to be displayed. This event is only emitted if auto
+   * launch message center is disabled.
+   *
+   * @event show_inbox
+   * @type {object}
+   * @param {string} [messageId] The optional message ID.
    */
 
   /**
    * Event fired when a push is received.
    *
-   * @event UrbanAirship#push
+   * @event push
    * @type {object}
    * @param {string} message The push alert message.
    * @param {string} title The push title.
    * @param {string} subtitle The push subtitle.
    * @param {object} extras Any push extras.
    * @param {object} aps The raw aps dictionary (iOS only)
-   * @param {number} [notification_id] The Android notification ID.
+   * @param {number} [notification_id] The Android notification ID. Deprecated in favor of notificationId.
+   * @param {string} [notificationId] The notification ID.
    */
 
   /**
    * Event fired when notification opened.
    *
-   * @event UrbanAirship#notification_opened
+   * @event notification_opened
    * @type {object}
    * @param {string} message The push alert message.
    * @param {object} extras Any push extras.
-   * @param {number} [notification_id] The Android notification ID.
+   * @param {number} [notification_id] The Android notification ID. Deprecated in favor of notificationId.
+   * @param {string} [notificationId] The notification ID.
    * @param {string} [actionID] The ID of the notification action button if available.
-   * @param {boolean} isForeground Will always be true if the user taps the main notification. Otherwise its defined by the notificaiton action button.
+   * @param {boolean} isForeground Will always be true if the user taps the main notification. Otherwise its defined by the notification action button.
    */
 
   /**
    * Event fired when the user notification opt-in status changes.
    *
-   * @event UrbanAirship#notification_opt_in_status
+   * @event notification_opt_in_status
    * @type {object}
    * @param {boolean} optIn If the user is opted in or not to user notifications.
-   * @param {object} [notificationOptions] iOS only. A map of opted in options.
-   * @param {boolean} notificationOptions.alert If the user is opted into alerts.
-   * @param {boolean} notificationOptions.sound If the user is opted into sounds.
-   * @param {boolean} notificationOptions.badge If the user is opted into badge updates.
+   * @param {object} [authorizedNotificationSettings] iOS only. A map of authorized settings.
+   * @param {boolean} authorizedNotificationSettings.alert If alerts are authorized.
+   * @param {boolean} authorizedNotificationSettings.sound If sounds are authorized.
+   * @param {boolean} authorizedNotificationSettings.badge If badges are authorized.
+   * @param {boolean} authorizedNotificationSettings.carPlay If car play is authorized.
+   * @param {boolean} authorizedNotificationSettings.lockScreen If the lock screen is authorized.
+   * @param {boolean} authorizedNotificationSettings.notificationCenter If the notification center is authorized.
    */
 
   /**
@@ -548,60 +562,6 @@ module.exports = {
     callNative(success, failure, "setAssociatedIdentifier", [key, identifier])
   },
 
-  // Location
-
-  /**
-   * Enables or disables Urban Airship location services.
-   *
-   * @param {Boolean} enabled true to enable location, false to disable.
-   * @param {function} [success] Success callback.
-   * @param {function(message)} [failure] Failure callback.
-   * @param {string} failure.message The error message.
-   */
-  setLocationEnabled: function(enabled, success, failure) {
-    argscheck.checkArgs('*FF', 'UAirship.setLocationEnabled', arguments)
-    callNative(success, failure, "setLocationEnabled", [!!enabled])
-  },
-
-  /**
-   * Checks if location is enabled or not.
-   *
-   * @param {function(enabled)} success Success callback.
-   * @param {boolean} success.enabled Flag indicating if location is enabled or not.
-   * @param {function(message)} [failure] Failure callback.
-   * @param {string} failure.message The error message.
-   */
-  isLocationEnabled: function(success, failure) {
-    argscheck.checkArgs('fF', 'UAirship.isLocationEnabled', arguments)
-    callNative(success, failure, "isLocationEnabled")
-  },
-
-  /**
-   * Enables or disables background location.
-   *
-   * @param {Boolean} enabled true to enable background location, false to disable.
-   * @param {function} [success] Success callback.
-   * @param {function(message)} [failure] Failure callback.
-   * @param {string} failure.message The error message.
-   */
-  setBackgroundLocationEnabled: function(enabled, success, failure) {
-    argscheck.checkArgs('*FF', 'UAirship.setBackgroundLocationEnabled', arguments)
-    callNative(success, failure, "setBackgroundLocationEnabled", [!!enabled])
-  },
-
-  /**
-   * Checks if background location is enabled or not.
-   *
-   * @param {function(enabled)} success Success callback.
-   * @param {boolean} success.enabled Flag indicating if background location updates are enabled or not.
-   * @param {function(message)} [failure] Failure callback.
-   * @param {string} failure.message The error message.
-   */
-  isBackgroundLocationEnabled: function(success, failure) {
-    argscheck.checkArgs('fF', 'UAirship.isBackgroundLocationEnabled', arguments)
-    callNative(success, failure, "isBackgroundLocationEnabled")
-  },
-
   /**
    * Displays the message center.
    *
@@ -749,6 +709,43 @@ module.exports = {
     callNative(success, failure, 'overlayInboxMessage', [messageId])
   },
 
+  /**
+   * Clears a notification by identifier.
+   *
+   * @param {string} identifier The notification identifier.
+   * @param {function} [success] Success callback.
+   * @param {function(message)} [failure] Failure callback.
+   */
+  clearNotification: function(identifier, success, failure) {
+    argscheck.checkArgs('sFF', 'UAirship.clearNotification', arguments)
+    callNative(success, failure, "clearNotification", [identifier])
+  },
+
+  /**
+   * Clears all notifications posted by the application.
+   *
+   * @param {function} [success] Success callback.
+   * @param {function(message)} [failure] Failure callback.
+   * @param {string} failure.message The error message.
+   */
+  clearNotifications: function(success, failure) {
+    argscheck.checkArgs('FF', 'UAirship.clearNotifications', arguments)
+    callNative(success, failure, "clearNotifications")
+  },
+
+  /**
+   * Gets currently active notifications.
+   *
+   * Note: On Android this functionality is only supported on Android M or higher.
+   *
+   * @param {function(messages)} [success] Success callback.
+   * @param {function(message)} [failure] Failure callback.
+   */
+  getActiveNotifications: function(success, failure) {
+    argscheck.checkArgs('fF', 'UAirship.getActiveNotifications', arguments)
+    callNative(success, failure, "getActiveNotifications")
+  },
+
   // iOS only
 
   /**
@@ -804,7 +801,7 @@ module.exports = {
 
   /**
    * Sets the iOS notification types. Specify the combination of
-   * badges, sound and alerts are desired.
+   * badges, sound and alerts that are desired.
    *
    * @param {notificationType} types specified notification types.
    * @param {function} [success] Success callback.
@@ -815,6 +812,20 @@ module.exports = {
     argscheck.checkArgs('nFF', 'UAirship.setNotificationTypes', arguments)
     callNative(success, failure, "setNotificationTypes", [types])
   },
+
+  /**
+   * Sets the iOS presentation options. Specify the combination of
+   * badges, sound and alerts that are desired.
+   *
+   * @param {presentationOptions} types specified presentation options.
+   * @param {function} [success] Success callback.
+   * @param {function(message)} [failure] Failure callback.
+   * @param {string} failure.message The error message.
+   */
+   setPresentationOptions: function(options, success, failure) {
+     argscheck.checkArgs('nFF', 'UAirship.setPresentationOptions', arguments)
+     callNative(success, failure, "setPresentationOptions", [options])
+   },
 
   /**
    * Enum for notification types.
@@ -828,19 +839,19 @@ module.exports = {
     alert: 4
   },
 
-  // Android only
-
   /**
-   * Clears all notifications posted by the application.
-   *
-   * @param {function} [success] Success callback.
-   * @param {function(message)} [failure] Failure callback.
-   * @param {string} failure.message The error message.
+   * Enum for presentation options.
+   * @readonly
+   * @enum {number}
    */
-  clearNotifications: function(success, failure) {
-    argscheck.checkArgs('FF', 'UAirship.clearNotifications', arguments)
-    callNative(success, failure, "clearNotifications")
+  presentationOptions: {
+    none: 0,
+    badge: 1,
+    sound: 2,
+    alert: 4
   },
+
+  // Android only
 
   /**
    * Checks if notification sound is enabled or not.

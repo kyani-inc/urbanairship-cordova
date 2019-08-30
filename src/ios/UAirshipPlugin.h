@@ -1,8 +1,15 @@
-/* Copyright 2018 Urban Airship and Contributors */
+/* Copyright Urban Airship and Contributors */
 
 #import <Foundation/Foundation.h>
 #import <Cordova/CDVPlugin.h>
+
+#if __has_include(<AirshipKit/AirshipLib.h>)
+#import <AirshipKit/AirshipLib.h>
+#elif __has_include("AirshipLib.h")
 #import "AirshipLib.h"
+#else
+@import AirshipKit;
+#endif
 
 /**
  * The Urban Airship Cordova plugin.
@@ -84,26 +91,6 @@
  * @param command The cordova command.
  */
 - (void)setTags:(CDVInvokedUrlCommand *)command;
-
-/**
- * Returns the alias.
- *
- * @deprecated Deprecated - to be removed in a future version of the plugin - please use getNamedUser
- *
- * @param command The cordova command.
- */
-- (void)getAlias:(CDVInvokedUrlCommand *)command DEPRECATED_MSG_ATTRIBUTE("Deprecated - to be removed in a future version of the plugin - please use getNamedUser");
-
-/**
- * Sets the alias.
- *
- * Expected arguments: String
- *
- * @deprecated Deprecated - to be removed in a future version of the plugin - please use setNamedUser
- *
- * @param command The cordova command.
- */
-- (void)setAlias:(CDVInvokedUrlCommand *)command DEPRECATED_MSG_ATTRIBUTE("Deprecated - to be removed in a future version of the plugin - please use setNamedUser");
 
 /**
  * Returns the current badge number.
@@ -207,6 +194,15 @@
  * @param command The cordova command.
  */
 - (void)setNotificationTypes:(CDVInvokedUrlCommand *)command;
+
+/**
+ * Sets notification presentation options.
+ *
+ * Expected arguments: Number - bitmask of the notification options
+ *
+ * @param command The cordova command.
+ */
+- (void)setPresentationOptions:(CDVInvokedUrlCommand *)command;
 
 /**
  * Enables or disables analytics.
@@ -403,5 +399,28 @@
  * @param command The cordova command.
  */
 - (void)isAppNotificationsEnabled:(CDVInvokedUrlCommand *)command;
+
+/**
+ * Gets the currently active notifications.
+ *
+ * @param command The cordova command.
+ */
+- (void)getActiveNotifications:(CDVInvokedUrlCommand *)command;
+
+/**
+ * Clears notifications by identifier.
+ *
+ * Expected arguemts: String - notification identifier.
+ *
+ * @param command The cordova command.
+ */
+- (void)clearNotification:(CDVInvokedUrlCommand *)command;
+
+/**
+ * Clears all notifications.
+ *
+ * @param command The cordova command.
+ */
+- (void)clearNotifications:(CDVInvokedUrlCommand *)command;
 
 @end

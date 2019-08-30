@@ -1,3 +1,101 @@
+=============================
+Version 8.0.0 - July 10, 2019
+=============================
+- Updated Android SDK to 10.0.1
+- Updated iOS SDK to 11.1.0
+- Added support for creating new Android notification channels and setting the default notification channel ID in Android
+- Using Airship location now requires adding airship-location-cordova plugin
+- Plugin now requires cordova >= 9.0.0, cordova-ios >= 5.0.1 and cocoapods >= 1.7.3
+
+============================
+Version 7.6.0 - June 5, 2019
+============================
+- Added support for app defined notification buttons/categories.
+- Fixed push events not being sent on iOS if a notification was delivered with a deep link.
+
+==============================
+Version 7.5.4 - April 19, 2019
+==============================
+- Added a gradle property `uaSkipApplyGoogleServicesPlugin` that will disable applying
+the `GoogleServicesPlugin` if set to `true`. This option should only be used if another
+plugin also applies the `GoogleServicesPlugin` to avoid build errors.
+- Updated Airship iOS SDK to 10.2.2
+
+==============================
+Version 7.5.3 - March 14, 2019
+==============================
+Fixed a security issue within Android Urban Airship SDK, that could allow trusted
+URL redirects in certain edge cases. All applications that are using
+urbanairship-cordova version 7.0.0 - 7.5.2 on Android should update as soon as possible.
+For more details, please email security@urbanairship.com.
+
+=============================
+Version 7.5.2 - March 1, 2019
+=============================
+- Make Android compatible with Java 1.6
+
+================================
+Version 7.5.1 - February 4, 2019
+================================
+- Fix Android crash when receiving a push when push is disabled.
+
+=================================
+Version 7.5.0 - January 23, 2019
+=================================
+- Added ShowInbox event
+- Fixed issue with installing directly from our Githup repo
+- Fixed Android build for new version of Cordova (8.1.2)
+- Fixed build failure in UAirshipPlugin.java
+- Updated Android SDK to 9.7.0
+- Updated iOS SDK to 10.0.4
+
+=================================
+Version 7.4.0 - December 21, 2018
+=================================
+- Added APIs to manage active notifications
+- Fixed issue with calling takeOff from JS
+
+=================================
+Version 7.3.4 - November 20, 2018
+=================================
+- Updated Android SDK to 9.5.6
+
+=================================
+Version 7.3.3 - November 14, 2018
+=================================
+- Fixed build issue with 7.3.2
+- Updated Android SDK to 9.5.5
+
+=================================
+Version 7.3.2 - November 13, 2018
+=================================
+- Fixed package issue with 7.3.1
+- Updated Android SDK to 9.5.4
+- Updated iOS SDK to 10.0.3
+
+===============================
+Version 7.3.1 - October 9, 2018
+===============================
+- Updated Android plugin to be compatible with older versions of Cordova Android.
+
+=================================
+Version 7.3.0 - September 25, 2018
+=================================
+- Updated iOS SDK to 10.0.0
+
+=================================
+Version 7.2.1 - September 20, 2018
+=================================
+- Updated iOS SDK to 9.4.0
+- Updated Android SDK to 9.5.2
+
+=================================
+Version 7.2.0 - July 26, 2018
+=================================
+- Updated iOS SDK to 9.3.3
+- Updated Android SDK to 9.4.1
+- Added setter for foreground presentation options
+- Enabled takeOff from the JS interface for iOS and Android
 
 =================================
 Version 7.1.1 - June 15, 2018
