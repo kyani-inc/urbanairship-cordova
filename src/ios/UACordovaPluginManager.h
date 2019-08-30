@@ -1,6 +1,14 @@
-/* Copyright 2018 Urban Airship and Contributors */
+/* Copyright Urban Airship and Contributors */
 
 #import <Foundation/Foundation.h>
+
+#if __has_include(<AirshipKit/AirshipLib.h>)
+#import <AirshipKit/AirshipLib.h>
+#elif __has_include("AirshipLib.h")
+#import "AirshipLib.h"
+#else
+@import AirshipKit;
+#endif
 
 /**
  * Manager delegate.
@@ -9,8 +17,13 @@
 
 /**
  * Called to notify listeners of a new or pending event.
+ *
+ * @param eventType The event type string.
+ * @param data The json payload dictionary.
+ *
+ * @return `YES` if a listener was notified, `NO` otherwise.
  */
--(void)notifyListener:(NSString *)eventType data:(NSDictionary *)data;
+-(BOOL)notifyListener:(NSString *)eventType data:(NSDictionary *)data;
 @end
 
 /**
@@ -68,4 +81,19 @@
  * @param appSecret The appSecret.
  */
 - (void)setProductionAppKey:(NSString *)appKey appSecret:(NSString *)appSecret;
+
+/**
+ * Sets the presentation options.
+ * @param options The presentation options.
+ */
+- (void)setPresentationOptions:(NSUInteger)options;
+
+/**
+ * Generates a push event dictionary from a notification content object.
+ *
+ * @param notificationContent The notification content.
+ * @return A push event dictionary.
+ */
+- (NSDictionary *)pushEventFromNotification:(UANotificationContent *)notificationContent;
+
 @end

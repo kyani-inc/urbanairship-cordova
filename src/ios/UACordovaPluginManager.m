@@ -1,7 +1,23 @@
-/* Copyright 2018 Urban Airship and Contributors */
+/* Copyright Urban Airship and Contributors */
 
 #import "UACordovaPluginManager.h"
+
+#if __has_include(<AirshipKit/AirshipLib.h>)
+#import <AirshipKit/AirshipLib.h>
+#elif __has_include("AirshipLib.h")
 #import "AirshipLib.h"
+#else
+@import AirshipKit;
+#endif
+
+#import "UACordovaEvent.h"
+#import "UACordovaDeepLinkEvent.h"
+#import "UACordovaInboxUpdatedEvent.h"
+#import "UACordovaNotificationOpenedEvent.h"
+#import "UACordovaNotificationOptInEvent.h"
+#import "UACordovaPushEvent.h"
+#import "UACordovaRegistrationEvent.h"
+#import "UACordovaShowInboxEvent.h"
 
 // Config keys
 NSString *const ProductionAppKeyConfigKey = @"com.urbanairship.production_app_key";
@@ -19,18 +35,20 @@ NSString *const NotificationPresentationAlertKey = @"com.urbanairship.ios_foregr
 NSString *const NotificationPresentationBadgeKey = @"com.urbanairship.ios_foreground_notification_presentation_badge";
 NSString *const NotificationPresentationSoundKey = @"com.urbanairship.ios_foreground_notification_presentation_sound";
 
-// Events
-NSString *const EventPushReceived = @"urbanairship.push";
-NSString *const EventNotificationOpened = @"urbanairship.notification_opened";
-NSString *const EventNotificationOptInStatus = @"urbanairship.notification_opt_in_status";
+NSString *const AuthorizedNotificationSettingsAlertKey = @"alert";
+NSString *const AuthorizedNotificationSettingsBadgeKey = @"badge";
+NSString *const AuthorizedNotificationSettingsSoundKey = @"sound";
+NSString *const AuthorizedNotificationSettingsCarPlayKey = @"carPlay";
+NSString *const AuthorizedNotificationSettingsLockScreenKey = @"lockScreen";
+NSString *const AuthorizedNotificationSettingsNotificationCenterKey = @"notificationCenter";
 
-NSString *const EventInboxUpdated = @"urbanairship.inbox_updated";
-NSString *const EventRegistration = @"urbanairship.registration";
-NSString *const EventDeepLink = @"urbanairship.deep_link";
+// Events
+NSString *const CategoriesPlistPath = @"UACustomNotificationCategories";
+
 
 @interface UACordovaPluginManager() <UARegistrationDelegate, UAPushNotificationDelegate, UAInboxDelegate, UADeepLinkDelegate>
 @property (nonatomic, strong) NSDictionary *defaultConfig;
-@property (nonatomic, strong) NSMutableDictionary *pendingEvents;
+@property (nonatomic, strong) NSMutableArray<NSObject<UACordovaEvent> *> *pendingEvents;
 @property (nonatomic, assign) BOOL isAirshipReady;
 
 @end
@@ -48,7 +66,7 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
 
     if (self) {
         self.defaultConfig = defaultConfig;
-        self.pendingEvents = [NSMutableDictionary dictionary];
+        self.pendingEvents = [NSMutableArray array];
     }
 
     return self;
@@ -76,6 +94,8 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
         [[UAirship push] resetBadge];
     }
 
+    [self loadCustomNotificationCategories];
+
     [UAirship push].pushNotificationDelegate = self;
     [UAirship push].registrationDelegate = self;
     [UAirship inbox].delegate = self;
@@ -87,6 +107,17 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
                                                object:nil];
 
     self.isAirshipReady = YES;
+}
+
+- (void)loadCustomNotificationCategories {
+    NSString *categoriesPath = [[NSBundle mainBundle] pathForResource:CategoriesPlistPath ofType:@"plist"];
+    NSSet *customNotificationCategories = [UANotificationCategories createCategoriesFromFile:categoriesPath];
+
+    if (customNotificationCategories.count) {
+        UA_LDEBUG(@"Registering custom notification categories: %@", customNotificationCategories);
+        [UAirship push].customCategories = customNotificationCategories;
+        [[UAirship push] updateRegistration];
+    }
 }
 
 - (UAConfig *)createAirshipConfig {
@@ -144,6 +175,12 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
     [[NSUserDefaults standardUserDefaults] setValue:appSecret forKey:DevelopmentAppSecretConfigKey];
 }
 
+- (void)setPresentationOptions:(NSUInteger)options {
+    [[NSUserDefaults standardUserDefaults] setValue:@(options & UNNotificationPresentationOptionAlert) forKey:NotificationPresentationAlertKey];
+    [[NSUserDefaults standardUserDefaults] setValue:@(options & UNNotificationPresentationOptionBadge) forKey:NotificationPresentationBadgeKey];
+    [[NSUserDefaults standardUserDefaults] setValue:@(options & UNNotificationPresentationOptionSound) forKey:NotificationPresentationSoundKey];
+}
+
 -(NSInteger)parseLogLevel:(id)logLevel defaultLogLevel:(UALogLevel)defaultValue  {
     if (![logLevel isKindOfClass:[NSString class]] || ![logLevel length]) {
         return defaultValue;
@@ -174,18 +211,22 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
 - (void)showMessageForID:(NSString *)messageID {
     if (self.autoLaunchMessageCenter) {
         [[UAirship messageCenter] displayMessageForID:messageID];
+    } else {
+        [self fireEvent:[UACordovaShowInboxEvent eventWithMessageID:messageID]];
     }
 }
 
 - (void)showInbox {
     if (self.autoLaunchMessageCenter) {
         [[UAirship messageCenter] display];
+    } else {
+        [self fireEvent:[UACordovaShowInboxEvent event]];
     }
 }
 
 - (void)inboxUpdated {
     UA_LDEBUG(@"Inbox updated");
-    [self fireEvent:EventInboxUpdated data:@{}];
+    [self fireEvent:[UACordovaInboxUpdatedEvent event]];
 }
 
 #pragma mark UAPushNotificationDelegate
@@ -193,8 +234,9 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
 -(void)receivedForegroundNotification:(UANotificationContent *)notificationContent completionHandler:(void (^)(void))completionHandler {
     UA_LDEBUG(@"Received a notification while the app was already in the foreground %@", notificationContent);
 
-    id event = [self pushEventFromNotification:notificationContent];
-    [self fireEvent:EventPushReceived data:event];
+    NSDictionary *data = [self pushEventFromNotification:notificationContent];
+
+    [self fireEvent:[UACordovaPushEvent eventWithData:data]];
 
     completionHandler();
 }
@@ -203,31 +245,31 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
                      completionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
 
     UA_LDEBUG(@"Received a background notification %@", notificationContent);
+    NSDictionary *data = [self pushEventFromNotification:notificationContent];
 
-    id event = [self pushEventFromNotification:notificationContent];
-
-    [self fireEvent:EventPushReceived data:event];
+    [self fireEvent:[UACordovaPushEvent eventWithData:data]];
     completionHandler(UIBackgroundFetchResultNoData);
 }
 
 -(void)receivedNotificationResponse:(UANotificationResponse *)notificationResponse completionHandler:(void (^)(void))completionHandler {
     UA_LDEBUG(@"The application was launched or resumed from a notification %@", notificationResponse);
     NSDictionary *pushEvent = [self pushEventFromNotification:notificationResponse.notificationContent];
-    NSMutableDictionary *event = [NSMutableDictionary dictionaryWithDictionary:pushEvent];
+    NSMutableDictionary *data = [NSMutableDictionary dictionaryWithDictionary:pushEvent];
 
     if ([notificationResponse.actionIdentifier isEqualToString:UANotificationDefaultActionIdentifier]) {
-        [event setValue:@(YES) forKey:@"isForeground"];
+        [data setValue:@(YES) forKey:@"isForeground"];
     } else {
         UANotificationAction *notificationAction = [self notificationActionForCategory:notificationResponse.notificationContent.categoryIdentifier
                                                                       actionIdentifier:notificationResponse.actionIdentifier];
 
         BOOL isForeground = notificationAction.options & UNNotificationActionOptionForeground;
-        [event setValue:@(isForeground) forKey:@"isForeground"];
-        [event setValue:notificationResponse.actionIdentifier forKey:@"actionID"];
+        [data setValue:@(isForeground) forKey:@"isForeground"];
+        [data setValue:notificationResponse.actionIdentifier forKey:@"actionID"];
     }
 
-    self.lastReceivedNotificationResponse = event;
-    [self fireEvent:EventNotificationOpened data:event];
+    self.lastReceivedNotificationResponse = data;
+
+    [self fireEvent:[UACordovaNotificationOpenedEvent eventWithData:data]];
     completionHandler();
 }
 
@@ -252,8 +294,8 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
 #pragma mark UADeepLinkDelegate
 -(void)receivedDeepLink:(NSURL *_Nonnull)url completionHandler:(void (^_Nonnull)(void))completionHandler {
     self.lastReceivedDeepLink = [url absoluteString];
-    NSDictionary *data = @{ @"deepLink":[url absoluteString]};
-    [self fireEvent:EventDeepLink data:data];
+    [self fireEvent:[UACordovaDeepLinkEvent eventWithDeepLink:url]];
+    completionHandler();
 }
 
 #pragma mark UARegistrationDelegate
@@ -268,44 +310,70 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
         data = @{ @"channelID":channelID };
     }
 
-    [self fireEvent:EventRegistration data:data];
+    [self fireEvent:[UACordovaRegistrationEvent eventWithData:data]];
 }
 
 - (void)registrationFailed {
     UA_LINFO(@"Channel registration failed.");
-    [self fireEvent:EventRegistration data:@{ @"error": @"Registration failed." }];
+    UACordovaRegistrationEvent *event = [UACordovaRegistrationEvent eventWithData:@{ @"error": @"Registration failed." }];
+    [self fireEvent:event];
 }
 
-- (void)notificationAuthorizedOptionsDidChange:(UANotificationOptions)options {
+- (void)notificationAuthorizedSettingsDidChange:(UAAuthorizedNotificationSettings)authorizedSettings {
     BOOL optedIn = NO;
 
     BOOL alertBool = NO;
     BOOL badgeBool = NO;
     BOOL soundBool = NO;
+    BOOL carPlayBool = NO;
+    BOOL lockScreenBool = NO;
+    BOOL notificationCenterBool = NO;
 
-    if (options & UANotificationOptionAlert) {
+    if (authorizedSettings & UAAuthorizedNotificationSettingsAlert) {
         alertBool = YES;
     }
 
-    if (options & UANotificationOptionBadge) {
+    if (authorizedSettings & UAAuthorizedNotificationSettingsBadge) {
         badgeBool = YES;
     }
 
-    if (options & UANotificationOptionSound) {
+    if (authorizedSettings & UAAuthorizedNotificationSettingsSound) {
         soundBool = YES;
     }
 
-    optedIn = alertBool || badgeBool || soundBool;
+    if (authorizedSettings & UAAuthorizedNotificationSettingsCarPlay) {
+        carPlayBool = YES;
+    }
+
+    if (authorizedSettings & UAAuthorizedNotificationSettingsLockScreen) {
+        lockScreenBool = YES;
+    }
+
+    if (authorizedSettings & UAAuthorizedNotificationSettingsNotificationCenter) {
+        notificationCenterBool = YES;
+    }
+
+    optedIn = authorizedSettings != UAAuthorizedNotificationSettingsNone;
 
     NSDictionary *eventBody = @{  @"optIn": @(optedIn),
+                                  // Deprecated payload for backwards compatibility
                                   @"notificationOptions" : @{
                                           NotificationPresentationAlertKey : @(alertBool),
                                           NotificationPresentationBadgeKey : @(badgeBool),
-                                          NotificationPresentationSoundKey : @(soundBool) }
-                                  };
+                                          NotificationPresentationSoundKey : @(soundBool)
+                                          },
+                                  @"authorizedNotificationSettings" : @{
+                                          AuthorizedNotificationSettingsAlertKey : @(alertBool),
+                                          AuthorizedNotificationSettingsBadgeKey : @(badgeBool),
+                                          AuthorizedNotificationSettingsSoundKey : @(soundBool),
+                                          AuthorizedNotificationSettingsCarPlayKey : @(carPlayBool),
+                                          AuthorizedNotificationSettingsLockScreenKey : @(lockScreenBool),
+                                          AuthorizedNotificationSettingsNotificationCenterKey : @(notificationCenterBool)
+                                          }};
 
     UA_LINFO(@"Opt in status changed.");
-    [self fireEvent:EventNotificationOptInStatus data:eventBody];
+    UACordovaNotificationOptInEvent *event = [UACordovaNotificationOptInEvent eventWithData:eventBody];
+    [self fireEvent:event];
 }
 
 - (NSDictionary *)pushEventFromNotification:(UANotificationContent *)notificationContent {
@@ -377,23 +445,34 @@ NSString *const EventDeepLink = @"urbanairship.deep_link";
     return notificationAction;
 }
 
-
-- (void)fireEvent:(NSString *)type data:(NSDictionary *)data {
+- (void)fireEvent:(NSObject<UACordovaEvent> *)event {
     id strongDelegate = self.delegate;
-    if (strongDelegate) {
-        [strongDelegate notifyListener:type data:data];
+
+    if (strongDelegate && [strongDelegate notifyListener:event.type data:event.data]) {
+        UA_LTRACE(@"Cordova plugin manager delegate notified with event of type:%@ with data:%@", event.type, event.data);
+
+        return;
     }
+
+    UA_LTRACE(@"No cordova plugin manager delegate available, storing pending event of type:%@ with data:%@", event.type, event.data);
+
+    // Add pending event
+    [self.pendingEvents addObject:event];
 }
 
 - (void)setDelegate:(id<UACordovaPluginManagerDelegate>)delegate {
     _delegate = delegate;
 
     if (delegate) {
-        NSDictionary *events = [self.pendingEvents copy];
-        [self.pendingEvents removeAllObjects];
+        @synchronized(self.pendingEvents) {
+            UA_LTRACE(@"Cordova plugin manager delegate set:%@", delegate);
 
-        for (NSString *eventType in events) {
-            [self fireEvent:eventType data:events[eventType]];
+            NSDictionary *events = [self.pendingEvents copy];
+            [self.pendingEvents removeAllObjects];
+
+            for (NSObject<UACordovaEvent> *event in events) {
+                [self fireEvent:event];
+            }
         }
     }
 }
