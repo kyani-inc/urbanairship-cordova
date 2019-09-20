@@ -814,7 +814,7 @@ public class UAirshipPlugin extends CordovaPlugin {
      */
     void setTitle(JSONArray data, CallbackContext callbackContext) throws JSONException {
         this.title = data.optString(0);
-        Logger.debug("setTitle: " + this.title);
+        PluginLogger.debug("setTitle: " + this.title);
         callbackContext.success();
     }
 
